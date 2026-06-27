@@ -1,0 +1,26 @@
+# dvp-matching deploy manifest — EXAMPLE. Copy to `thebes.toml` and fill in your cluster.
+# The matching engine + listing registry settle through an already-deployed dvp-core.
+[project]
+name = "dvp-matching"
+default_network = "local"
+chain_id = 0
+
+[networks.local]
+validators = [
+    "http://127.0.0.1:18080",
+]
+routing = "smart"
+
+# Issuer-gated listing registry (programmable compliance gate).
+[canisters.listing]
+type = "backend-motoko"
+wasm = "build/ListingRegistry.wasm"
+init = "()"
+identity = "your-deployer"
+
+# Frequent batch-auction CLOB. `maxFillsPerChunk` cap is set in source (production 4000).
+[canisters.xchg]
+type = "backend-motoko"
+wasm = "build/Matching.wasm"
+init = "()"
+identity = "your-deployer"
