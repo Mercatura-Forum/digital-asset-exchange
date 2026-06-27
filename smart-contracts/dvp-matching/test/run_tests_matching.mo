@@ -2,7 +2,7 @@
 ///
 /// Run (no replica):
 ///   moc -r --package core <core@2.5.0/src> --package sha2 <sha2@0.1.9/src> \
-///       canisters/dvp-matching/test/run_tests_matching.mo
+///       smart-contracts/dvp-matching/test/run_tests_matching.mo
 /// Non-zero exit on any failure (Runtime.trap at the end), so it is a hard CI gate.
 ///
 /// PART 1 — unit checks on hand-computed call-auction cases (clearing price, volume, priority).

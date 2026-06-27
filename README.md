@@ -38,12 +38,12 @@ once under the hood.
 
 ### 1. The settlement core — `dvp-core`
 
-**Plain language.** This is the part that makes "both or neither" true. It takes the asset from
+This is the part that makes "both or neither" true. It takes the asset from
 one party and the cash from the other, holds both for an instant, and releases them to their new
 owners at the same time. If either side fails to deliver in time, everything already collected is
 handed straight back. Nobody is ever left half-paid.
 
-**Under the hood.** A delivery-versus-payment state machine implementing **BIS DvP Model 1**
+A delivery-versus-payment state machine implementing **BIS DvP Model 1**
 (trade-by-trade, gross, simultaneous final settlement). A trade has two legs — an asset leg and a
 cash leg — and walks a strict lifecycle: `Open → Funded → Settled`, or `Open → Aborted` if the
 funding deadline passes. Settlement is gated: payouts can only fire once **both** legs are escrowed
@@ -64,12 +64,12 @@ the same proven core settles a share-for-cash trade and a land-for-cash trade wi
 
 ### 2. The matching engine — `dvp-matching`
 
-**Plain language.** This is the trading floor for shares. Buyers and sellers post the price they
+This is the trading floor for shares. Buyers and sellers post the price they
 want. At a fixed rhythm the engine collects every order, finds the one fair price that clears the
 most trades, and matches everyone at that single price. There is no advantage to being microseconds
 faster than the next person.
 
-**Under the hood.** A **frequent batch-auction CLOB** (continuous limit order book cleared in
+A **frequent batch-auction CLOB** (continuous limit order book cleared in
 discrete windows) with price-time priority and a uniform clearing price `p*`. Batch auctions are a
 deliberate choice over continuous matching; they neutralise the latency races and front-running that
 plague continuous books (see Budish-Cramton-Shim, *"The High-Frequency Trading Arms Race"*). The
@@ -82,12 +82,12 @@ chunked clear reconstructs byte-for-byte identically to an unbounded reference r
 
 ### 3. The listing registry — `dvp-listing`
 
-**Plain language.** This decides what is allowed to trade. A market operator approves trusted
+This decides what is allowed to trade. A market operator approves trusted
 issuers; an approved company can then list its own shares or land. The rule it enforces is simple:
 nothing is tradeable unless it is real and funded. You cannot list a company that has issued no
 shares, or land that has no registered titles.
 
-**Under the hood.** Programmable compliance, on-chain. The venue admin (the installer) authorizes
+Programmable compliance, on-chain. The venue admin (the installer) authorizes
 issuers; an authorized issuer lists its own asset. Listing a share market is accepted only if the
 shares ledger reports `icrc1_total_supply > 0` and the paired cash ledger answers `icrc1_fee` (proof
 it is a real ICRC ledger); listing land is accepted only if the collection reports
@@ -97,12 +97,12 @@ orders. This is an additive gate; it never touches the byte-frozen settlement co
 
 ### 4. ICRC-MENA — the self-indexed ledger (cash and shares)
 
-**Plain language.** This is the ledger that holds balances and records every movement of money or
+This is the ledger that holds balances and records every movement of money or
 shares. What makes it special: it keeps its own searchable history built in. On most blockchains you
 need a second, separate service just to answer "show me this account's transactions"; here the ledger
 answers that itself, and every answer comes with cryptographic proof that it was not tampered with.
 
-**Under the hood.** **ICRC-MENA** (formerly ICRC-ME) is our production-hardened, self-indexed
+**ICRC-MENA** (formerly ICRC-ME) is our production-hardened, self-indexed
 ICRC-1 / ICRC-2 / ICRC-3 / ICRC-10 token ledger. *First on ICP to eliminate the separate index
 canister:* every transfer atomically updates a per-account transaction index inside the same
 canister. The stack is modular: `Balances.mo` and `Allowances.mo` (ports of DFINITY's `balances.rs`
@@ -115,12 +115,12 @@ ledger on the exchange are instances of ICRC-MENA.
 
 ### 5. ICRC-7 / ICRC-37 land ledger — `dvp-core/src/land`
 
-**Plain language.** This is the registry of land. Each parcel is a unique digital title with its own
+This is the registry of land. Each parcel is a unique digital title with its own
 permanent attributes. It can be owned, transferred, and — crucially — sold atomically for cash
 through the same settlement core, so a land sale carries the exact same "both or neither" guarantee
 as a share trade.
 
-**Under the hood.** A spec-compliant **ICRC-7** (non-fungible token) plus **ICRC-37** (NFT approval)
+A spec-compliant **ICRC-7** (non-fungible token) plus **ICRC-37** (NFT approval)
 land-title ledger. One parcel = one `token_id` plus immutable metadata. All registry logic lives in a
 single tested module (`LandRegistry.mo`); the actor (`LandLedger.mo`) wires it to the exact ICRC-7/37
 batch shapes. Transfer fee is zero because a title is indivisible — conservation here is "the unique
@@ -156,7 +156,7 @@ recorded the result for independent audit.
 
 ```
 mops.toml          dependency manifest (core, sha2)
-canisters/
+smart-contracts/
   dvp-core/        DvP atomic-swap settlement core (BIS Model 1) + land ledger + MMR audit
     src/           DvpCore, DvpLogic, DvpTypes, MerkleMMR, ICRC7, Guards
     src/land/      LandLedger (ICRC-7/37), LandRegistry

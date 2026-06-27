@@ -3,13 +3,13 @@
 **Audience:** the frontend team building the "wow" UI. **Backend:** live + seeded on the **chain_id-4
 throwaway** Egypt-L1 cluster (validators `187.127.85.101 / 187.124.35.206 / 187.77.182.211 /
 72.60.80.89` on `:18080`). **This is the throwaway, never prod (chain_id 2026 `wan`).** Everything
-below is proven end-to-end (see `canisters/dvp-matching/evidence/phase4/`). The frontend builds
+below is proven end-to-end (see `smart-contracts/dvp-matching/evidence/phase4/`). The frontend builds
 against this with **zero backend guesswork** — every method, arg/return shape, seeded id, and the
 exact call sequence per flow is here.
 
-> Author: Menese DeFi Team. Source-of-truth `.did` files: `canisters/dvp-matching/build/Matching.did`,
-> `canisters/dvp-core/build/DvpCore.did`, `canisters/dvp-listing/build/ListingRegistry.did`,
-> `canisters/dvp-core/build/{IndexedLedger,LandLedger}` interfaces.
+> Author: Menese DeFi Team. Source-of-truth `.did` files: `smart-contracts/dvp-matching/build/Matching.did`,
+> `smart-contracts/dvp-core/build/DvpCore.did`, `smart-contracts/dvp-listing/build/ListingRegistry.did`,
+> `smart-contracts/dvp-core/build/{IndexedLedger,LandLedger}` interfaces.
 
 ---
 
@@ -164,7 +164,7 @@ registerIssuer    : (principal) -> (variant { ok: text; err: text });           
 ### Flow 3 — Regulator audit stream (read-only, no login)
 1. **Live order/match feed:** poll `xchgD.allOrders()`, `xchgD.allObligations()`, `xchgD.obligationSummary()`.
 2. **Settlement lifecycle:** `coreD.allEvents()` → ordered `AuditEvent{ encoded }` strings (`ORDER|… → FUND_A|… → FUND_B|… → FUNDED|… → SETTLED|…` per trade).
-3. **Tamper-evidence:** `coreD.auditRootHex()` → the on-chain MMR root; re-derive it off-chain from the `encoded` events (leaf = `SHA256(0x00‖utf8(encoded))`, node = `SHA256(0x01‖L‖R)`, fold peaks high→low) and assert equality. Reference re-deriver: `canisters/dvp-core/evidence/icrc7/mmr_rederive.py` (proven MATCH against this backend).
+3. **Tamper-evidence:** `coreD.auditRootHex()` → the on-chain MMR root; re-derive it off-chain from the `encoded` events (leaf = `SHA256(0x00‖utf8(encoded))`, node = `SHA256(0x01‖L‖R)`, fold peaks high→low) and assert equality. Reference re-deriver: `smart-contracts/dvp-core/evidence/icrc7/mmr_rederive.py` (proven MATCH against this backend).
 4. **Cross-node verifiability (optional, sovereign):** the frontend may also poll each validator's `/api/block/{h}` and confirm `block_hash` + `state_root` agree across all 4 nodes (INV-C1/C2).
 
 ---
