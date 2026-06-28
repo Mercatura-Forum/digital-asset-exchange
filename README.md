@@ -93,7 +93,7 @@ shares ledger reports `icrc1_total_supply > 0` and the paired cash ledger answer
 it is a real ICRC ledger); listing land is accepted only if the collection reports
 `icrc7_total_supply > 0`. The matching engine consults `isPairTradeable` at order intake and RFQ
 clients consult `isLandTradeable`, so an unregistered, unfunded, or delisted market accepts no
-orders. This is an additive gate; it never touches the byte-frozen settlement core.
+orders. This gate is additive; it never touches the settlement core.
 
 ### 4. ICRC-MENA — the self-indexed ledger (cash and shares)
 
@@ -184,7 +184,7 @@ The showcase frontend lives in a separate tree and is committed alongside in a f
 
 The full exchange is live on Egypt-L1 production (chain_id 2026): settlement core, matching engine,
 listing registry, the CBDC and six company-share ICRC-MENA ledgers, and the land ledger, all seeded
-and query-verified. The settlement core is byte-frozen and unchanged across every later phase.
+and query-verified. The settlement core was implemented once and has not changed since.
 
 ---
 

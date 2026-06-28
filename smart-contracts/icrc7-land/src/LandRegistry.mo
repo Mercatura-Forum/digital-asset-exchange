@@ -4,15 +4,15 @@
 /// registry logic (ownership, transfer, approvals, dedup) operating on an externalized
 /// `State` record, so two actors share ONE source of truth: `LandLedger` (the clean
 /// production ledger) and `FlakyLandLedger` (the same logic + a controller-gated
-/// clean-transient injector used ONLY as a throwaway test fixture for the DvP core's
-/// idempotent-retry acceptance test — mission L3). Keeping the registry in one tested
+/// clean-transient injector used ONLY as a test fixture for the DvP core's
+/// idempotent-retry acceptance test). Keeping the registry in one tested
 /// module is the production-grade alternative to copy-pasting the ledger (cf. how the
 /// fungible side copied IndexedLedger → FlakyLedger).
 ///
 /// Conformance: ICRC-7 (icrc7_transfer/owner_of/tokens/balance_of) + ICRC-37
 /// (icrc37_transfer_from/approve_tokens/approve_collection), batch `vec`/`vec opt Result`
 /// shapes exact. created_at_time dedup window mirrors IndexedLedger.checkDedupAndTime, with
-/// the fresh-genesis Nat64-underflow GUARD baked in (the P1 finding: `now − 24h` underflows
+/// the fresh-genesis Nat64-underflow GUARD baked in (a real edge case: `now − 24h` underflows
 /// when Time.now() is small on a freshly-genesis'd egypt chain).
 
 import Principal "mo:core/Principal";
@@ -23,7 +23,7 @@ import Text "mo:core/Text";
 import Map "mo:core/Map";
 import List "mo:core/List";
 
-import I "../ICRC7";
+import I "../../dvp-core/src/ICRC7";
 
 module {
 
@@ -116,7 +116,7 @@ module {
     if (state.dedupPruneCounter % 10 != 0) return;
     // GUARD: until the chain clock exceeds the full window, `now − window` would underflow
     // Nat64 (trap "arithmetic overflow"). On a freshly-genesis'd egypt chain Time.now() is
-    // small (~1e13 ns) — skip pruning entirely until it is safe. This is the P1 finding's fix.
+    // small (~1e13 ns) — skip pruning entirely until it is safe. This is the fix for that edge case.
     let threshold = TX_WINDOW_NS + PERMITTED_DRIFT_NS + PRUNE_MARGIN_NS;
     if (now <= threshold) return;
     let cutoff = now - threshold;

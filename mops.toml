@@ -7,4 +7,3 @@ keywords = ["dvp", "exchange", "icrc", "icrc-mena", "settlement", "defi", "motok
 
 [dependencies]
 core = "2.3.1"
-sha2 = "0.1.9"

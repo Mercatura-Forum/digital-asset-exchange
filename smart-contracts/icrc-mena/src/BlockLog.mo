@@ -19,7 +19,7 @@ import Text "mo:core/Text";
 import Time "mo:core/Time";
 import Principal "mo:core/Principal";
 
-import Sha256 "mo:sha2/Sha256";
+import Sha256 "../../lib/crypto/Sha256";
 
 import T "Types";
 import SLog "StableLog";

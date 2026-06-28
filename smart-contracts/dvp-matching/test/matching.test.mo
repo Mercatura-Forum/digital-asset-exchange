@@ -6,10 +6,10 @@
 /// Non-zero exit on any failure (Runtime.trap at the end), so it is a hard CI gate.
 ///
 /// PART 1 — unit checks on hand-computed call-auction cases (clearing price, volume, priority).
-/// PART 2 — chunked == unbounded EQUIVALENCE (mission M1): for thousands of random books, the
+/// PART 2 — chunked == unbounded EQUIVALENCE: for thousands of random books, the
 ///   resumable step() planner, stopped at EVERY possible chunk size k, reproduces the unbounded
 ///   fillSchedule byte-for-byte (same fills, same order) AND the per-trader book/balance deltas
-///   are identical. PLUS conservation (M4) and price-time priority (M3) on every trial.
+///   are identical. PLUS conservation and price-time priority on every trial.
 
 import Debug "mo:core/Debug";
 import Runtime "mo:core/Runtime";
@@ -185,7 +185,7 @@ label trials while (t < TRIALS) {
       let ea = L.eligibleAsks(asks, pStar);
       let V = L.targetVolume(bids, asks, pStar);
 
-      // priority (M3): eligible bids non-increasing price; within equal price, increasing id.
+      // price-time priority: eligible bids non-increasing price; within equal price, increasing id.
       var pidx = 1;
       // (qty-priority sort is validated structurally below via the fill order)
       let _ = pidx;
@@ -194,7 +194,7 @@ label trials while (t < TRIALS) {
       let unb = L.fillSchedule(eb, ea, pStar, V);
       let (ub, us, ush, ucash) = applySchedule(unb);
 
-      // chunked at several chunk sizes — MUST match unbounded byte-for-byte (M1)
+      // chunked at several chunk sizes — MUST match unbounded byte-for-byte
       for (k in [1, 2, 3, 5, 13].vals()) {
         let ch = chunkedSchedule(eb, ea, pStar, V, k);
         if (not fillsEqual(unb, ch)) { failures += 1; Debug.print("  FAIL: chunked!=unbounded trial=" # Nat.toText(t) # " k=" # Nat.toText(k)); };
@@ -206,7 +206,7 @@ label trials while (t < TRIALS) {
         checks += 1;
       };
 
-      // conservation (M4): shares == V, cash == V*p*
+      // conservation: shares == V, cash == V*p*
       if (not L.scheduleConserves(unb, pStar, V)) { failures += 1; Debug.print("  FAIL: conservation trial=" # Nat.toText(t)) };
       checks += 1;
       if (ush != V or ucash != V * pStar) { failures += 1; Debug.print("  FAIL: volume/cash trial=" # Nat.toText(t)) };
@@ -224,7 +224,7 @@ label trials while (t < TRIALS) {
   };
 };
 
-Debug.print("PART 3 — all-or-none (FOK) Kill-before-mutate (mission M2)");
+Debug.print("PART 3 — all-or-none (FOK) kill-before-mutate");
 
 type BOA = L.BookOrderA;
 // fill totals for survivors at p*, to assert every surviving AON order fully fills

@@ -24,21 +24,21 @@ import Time "mo:core/Time";
 import Runtime "mo:core/Runtime";
 import Timer "mo:core/Timer";
 
-import T "Types";
-import Bal "Balances";
-import Allow "Allowances";
-import BLog "BlockLog";
-import Cert "CertifiedTree";
-import Bloom "BloomFilter";
+import T "../src/Types";
+import Bal "../src/Balances";
+import Allow "../src/Allowances";
+import BLog "../src/BlockLog";
+import Cert "../src/CertifiedTree";
+import Bloom "../src/BloomFilter";
 
 // FlakyLedger — a REAL ICRC-1/2 ledger (verbatim IndexedLedger logic) with one addition:
 // a controller-settable clean-transient fault injector on icrc1_transfer, used ONLY as a
-// throwaway TEST FIXTURE to drive the DvP core's idempotent-retry path (mission T4). The
+// TEST FIXTURE to drive the DvP core's idempotent-retry path. The
 // injected failure returns BEFORE any state change or dedup record, so it is a genuine
 // transient (a retry re-sends normally) — not a stub of the DvP core, which stays pristine.
 shared(initMsg) persistent actor class IndexedLedger(args : T.InitArgs) = self {
 
-  // T4 fault injection: the next N icrc1_transfer calls return #TemporarilyUnavailable
+  // fault injection: the next N icrc1_transfer calls return #TemporarilyUnavailable
   // (clean, no commit) before falling through to normal behavior.
   var failTransfersRemaining : Nat = 0;
 
@@ -180,7 +180,7 @@ shared(initMsg) persistent actor class IndexedLedger(args : T.InitArgs) = self {
   // ═══════════════════════════════════════════════════════
 
   public shared ({ caller }) func icrc1_transfer(transferArgs : T.TransferArgs) : async { #Ok : Nat; #Err : T.TransferError } {
-    // T4 clean-transient injection — fire BEFORE any state/dedup mutation so a retry re-sends.
+    // clean-transient injection — fire BEFORE any state/dedup mutation so a retry re-sends.
     if (failTransfersRemaining > 0) {
       failTransfersRemaining -= 1;
       return #Err(#TemporarilyUnavailable);

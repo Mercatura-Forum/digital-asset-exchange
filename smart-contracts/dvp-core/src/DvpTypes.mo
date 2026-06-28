@@ -3,9 +3,9 @@
 /// Ledger-agnostic leg abstraction: a trade settles `legA` (the asset/delivery leg,
 /// maker -> taker) against `legB` (the cash/payment leg, taker -> maker). Each leg
 /// references an ICRC ledger and a kind. The `#icrc1` (fungible) kind is fully
-/// implemented and proven on the Egypt-L1 throwaway by this mission; the `#icrc7`
+/// implemented and proven by the test battery; the `#icrc7`
 /// (non-fungible) kind is part of the type for forward-compatibility — its on-chain
-/// validation is the land-ledger phase (see for-team/proposal-dvp-icrc7-leg.md). The
+/// validation lives in the land ledger. The
 /// state machine never branches on kind; only the ledger-dispatch layer does, so adding
 /// the ICRC-7 handler is additive and does not touch the lifecycle / invariant logic.
 

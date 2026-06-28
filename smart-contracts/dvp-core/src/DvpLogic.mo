@@ -4,7 +4,7 @@
 /// can be exhaustively unit-tested under `mops test --mode interpreter` with no replica.
 /// DvpCore.mo calls these for the error-prone arithmetic and gating; the test battery
 /// drives the same functions plus a pure mock-ledger simulation. Keeping the conservation
-/// arithmetic and the lifecycle gates in one tested place is what closes agenda F.
+/// arithmetic and the lifecycle gates in one tested place is what keeps them easy to test in isolation.
 
 import T "DvpTypes";
 

@@ -1,4 +1,4 @@
-/// run_tests.mo — interpreter battery for the DvP core's pure logic (agenda F + T6 property).
+/// dvp-logic.test.mo — interpreter battery for the DvP core's pure logic (unit checks + property simulation).
 ///
 /// Run with the moc interpreter (no replica):
 ///   moc -r --package core <core/src> --package sha2 <sha2/src> test/run_tests.mo

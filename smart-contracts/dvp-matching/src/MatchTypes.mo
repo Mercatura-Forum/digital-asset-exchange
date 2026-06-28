@@ -1,4 +1,4 @@
-/// MatchTypes.mo — types for the frequent-batch-auction CLOB matching engine (DvP P3).
+/// MatchTypes.mo — types for the frequent-batch-auction CLOB matching engine.
 ///
 /// The matching engine is a pure ORCHESTRATOR: it runs a price-time-priority order book, a
 /// frequent batch-auction uniform-price clear, and emits per-match SETTLEMENT OBLIGATIONS that
@@ -57,7 +57,7 @@ module {
 
   // Resumable chunked-clear cursor (mirrors CLMM PendingSwap). The eligible id/qty arrays + V + p*
   // are FIXED at window close (orders arriving during the chunking gap go to the NEXT window), so
-  // chunk K reconstructs byte-identically to an unbounded reference run (mission M1).
+  // chunk K reconstructs byte-identically to an unbounded reference run.
   public type PendingClear = {
     window : Nat;
     clearingPrice : Nat;   // p*, fixed at window close, reused across ALL chunks

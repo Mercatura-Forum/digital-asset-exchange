@@ -16,8 +16,8 @@
 ///
 /// Funding primitive: ICRC-2 approve + transfer_from (core pulls into its own account).
 /// Pay-out / refund primitive: ICRC-1 transfer from the core. Leg-agnostic: the state
-/// machine never branches on leg kind — only the ledger-dispatch helpers do (see
-/// for-team/proposal-dvp-icrc7-leg.md for the ICRC-7 handler validated in the land phase).
+/// machine never branches on leg kind — only the ledger-dispatch helpers do, so the same
+/// proven core settles both a fungible share-for-cash trade and a non-fungible land-title sale.
 
 import Principal "mo:core/Principal";
 import Map "mo:core/Map";
@@ -45,11 +45,10 @@ shared (initMsg) persistent actor class DvpCore() = self {
   // permissionless among authenticated principals).
   ignore initMsg;
 
-  // ── Additive (P4): the core installer (deployer/controller). Used ONLY to gate the additive
-  // authorized-relayer surface below (setMatchingEngine). It does NOT gate any lifecycle function —
-  // openTrade/fund*/settle/reclaim stay permissionless among authenticated principals exactly as
-  // before (frozen, mission rule 6). Captured from the install message; on a state-preserving
-  // upgrade it is re-derived from the upgrade caller (the same controller deploys both).
+  // ── The core installer (deployer/controller). Used ONLY to authorize the matched-settlement
+  // relayer surface below (setMatchingEngine); it does NOT gate any lifecycle function —
+  // openTrade/fund*/settle/reclaim stay permissionless among authenticated principals. Captured
+  // from the install message; on a state-preserving upgrade it is re-derived from the upgrade caller.
   transient let installer : Principal = initMsg.caller;
 
   // ── State ──────────────────────────────────────────────────────────────────────
@@ -70,7 +69,7 @@ shared (initMsg) persistent actor class DvpCore() = self {
   // Diagnostic invariant log (INV-DVP-4 no-stranding). Safety invariants (1/2/3) trap.
   let invLog = List.empty<Text>();
 
-  // ── Additive (P4) — authorized-relayer surface for autonomous matched settlement ───────────────
+  // ── Authorized-relayer surface for autonomous matched settlement ──────────────────────────────
   // The controller-set matching engine principal. ONLY this principal may call settleMatchFor
   // (which pairs two independent ICRC-2 approvals into one trade at a chosen price — a power that
   // must not be open to arbitrary callers). null until the installer binds it via setMatchingEngine.
@@ -82,8 +81,8 @@ shared (initMsg) persistent actor class DvpCore() = self {
   // share this core never collide on each other's per-engine seq counters (which both start at 0).
   let matchSettlements = Map.empty<Text, Nat>();
   func matchKey(engine : Principal, seq : Nat) : Text { Principal.toText(engine) # "|" # Nat.toText(seq) };
-  // Admin/relayer event log (NOT in the audit-MMR, so the MMR stays lifecycle-only and the P1/P2
-  // root re-derivation is byte-compatible). Diagnostic.
+  // Admin/relayer event log, kept OUT of the audit-MMR so the MMR stays lifecycle-only and its
+  // root re-derives from the public event log alone. Diagnostic.
   let adminLog = List.empty<Text>();
 
   transient let mutex = Guards.MutexManager();
@@ -503,7 +502,7 @@ shared (initMsg) persistent actor class DvpCore() = self {
   /// only fungible amounts and cannot express a `tokenId`, so a separate entrypoint is
   /// required to build the `#icrc7` leg WITHOUT editing the frozen lifecycle. It feeds the
   /// Trade into the SAME unchanged state machine (escrow/fund/settle/reclaim/checkInvariants/
-  /// MMR) — proving the leg-agnostic guarantee (mission L5). The maker must `icrc37_approve`
+  /// MMR) — which is what proves the leg-agnostic guarantee in practice. The maker must `icrc37_approve`
   /// this core for `tokenId`; the inline escrow pulls the title into the core's account.
   public shared ({ caller }) func openLandTrade(args : {
     taker : ?Principal;
@@ -652,7 +651,7 @@ shared (initMsg) persistent actor class DvpCore() = self {
     #ok(res);
   };
 
-  // ══ Additive (P4): authorized-relayer autonomous matched settlement ════════════════════════════
+  // ══ Authorized-relayer autonomous matched settlement ══════════════════════════════════════════
   //
   // `settleMatchFor` lets the controller-set matching engine settle a cleared (seller S, buyer B,
   // price p*, qty q) match with NO trader action at settle: it builds a Trade with maker = S and
@@ -662,8 +661,8 @@ shared (initMsg) persistent actor class DvpCore() = self {
   // pays leg A → taker = B (B gets the asset) and leg B → maker = S (S gets the cash): exactly the
   // match, both-or-neither, with every INV-DVP guarantee verbatim.
   //
-  // This is the exact additive class as P2's `openLandTrade`: NEW entrypoint + NEW state, ZERO edits
-  // to any frozen lifecycle function (mission rule 6 / L5). The only behavioural difference from
+  // Same shape as `openLandTrade`: a new entrypoint plus new state, with no edits
+  // to any lifecycle function. The only behavioural difference from
   // openTrade is WHO escrows: here the relayer drives BOTH legs' escrow-pulls from their owners,
   // instead of maker-then-taker self-funding. The both-or-neither property is unchanged because it
   // lives in settleInner's DvP gate (a payout fires only when both legs are escrowed), not in who

@@ -33,7 +33,7 @@ import Blob "mo:core/Blob";
 import VarArray "mo:core/VarArray";
 import List "mo:core/List";
 
-import Sha256 "mo:sha2/Sha256";
+import Sha256 "../../lib/crypto/Sha256";
 
 module {
 

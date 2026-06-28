@@ -1,4 +1,4 @@
-/// ListingRegistry.mo — issuer-gated listing venue for the DvP digital-asset exchange (P4-D).
+/// ListingRegistry.mo — issuer-gated listing venue for the DvP digital-asset exchange.
 ///
 /// The on-chain source of truth for "what is tradeable". Two asset classes:
 ///   • fungible SHARES (ICRC-1/2), paired with a CBDC cash ledger → traded on a matching engine
@@ -14,7 +14,7 @@
 /// The matching engine consults `isPairTradeable` at order intake; an unregistered/unfunded/
 /// delisted market accepts no orders. RFQ/land clients consult `isLandTradeable`.
 ///
-/// This is an ADDITIVE venue layer: it does NOT touch the byte-frozen DvP core or the proven
+/// This is an additive venue layer: it does NOT touch the DvP core or the proven
 /// matching/clearing logic — it gates intake only.
 
 import Principal "mo:core/Principal";

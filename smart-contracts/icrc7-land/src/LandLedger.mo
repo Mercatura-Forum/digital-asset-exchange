@@ -8,7 +8,7 @@
 /// exactly once", not arithmetic.
 ///
 /// This is the CLEAN production ledger. `FlakyLandLedger` is the same registry + a
-/// controller-gated clean-transient injector used ONLY as a throwaway test fixture.
+/// controller-gated clean-transient injector used ONLY as a test fixture.
 
 import Principal "mo:core/Principal";
 import Nat "mo:core/Nat";
@@ -18,7 +18,7 @@ import Time "mo:core/Time";
 import List "mo:core/List";
 import Runtime "mo:core/Runtime";
 
-import I "../ICRC7";
+import I "../../dvp-core/src/ICRC7";
 import R "LandRegistry";
 
 shared (initMsg) persistent actor class LandLedger(args : { name : Text; symbol : Text; description : ?Text }) = self {

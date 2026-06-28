@@ -1,5 +1,5 @@
 /// FlakyLandLedger.mo — the LandLedger registry + a controller-gated clean-transient fault
-/// injector on icrc7_transfer. THROWAWAY TEST FIXTURE ONLY (mission L3): it drives the DvP
+/// injector on icrc7_transfer. TEST FIXTURE ONLY: it drives the DvP
 /// core's idempotent-retry path for the NFT payout leg.
 ///
 /// The injected failure returns `#Err(#GenericError)` BEFORE any state change or dedup record
@@ -16,8 +16,8 @@ import Time "mo:core/Time";
 import List "mo:core/List";
 import Runtime "mo:core/Runtime";
 
-import I "../ICRC7";
-import R "LandRegistry";
+import I "../../../dvp-core/src/ICRC7";
+import R "../src/LandRegistry";
 
 shared (initMsg) persistent actor class FlakyLandLedger(args : { name : Text; symbol : Text; description : ?Text }) = self {
 
@@ -27,7 +27,7 @@ shared (initMsg) persistent actor class FlakyLandLedger(args : { name : Text; sy
   let tokenDescription = args.description;
   let controller = initMsg.caller;
 
-  // L3 fault injection: the next N icrc7_transfer calls return #GenericError (clean, no commit)
+  // fault injection: the next N icrc7_transfer calls return #GenericError (clean, no commit)
   // before falling through to normal behavior.
   var failTransfersRemaining : Nat = 0;
 

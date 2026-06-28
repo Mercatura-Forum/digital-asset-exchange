@@ -1,8 +1,8 @@
 # DvP Exchange — Frontend Integration Spec (Phase-4 handoff)
 
-**Audience:** the frontend team building the "wow" UI. **Backend:** live + seeded on the **chain_id-4
-throwaway** Egypt-L1 cluster (validators `187.127.85.101 / 187.124.35.206 / 187.77.182.211 /
-72.60.80.89` on `:18080`). **This is the throwaway, never prod (chain_id 2026 `wan`).** Everything
+**Audience:** the frontend team building the "wow" UI. **Backend:** an Egypt-L1 cluster; point the
+client at your own cluster's validator endpoints (configure them in your deploy manifest — no node
+addresses are hard-coded in this document). Everything
 below is proven end-to-end (see `smart-contracts/dvp-matching/evidence/phase4/`). The frontend builds
 against this with **zero backend guesswork** — every method, arg/return shape, seeded id, and the
 exact call sequence per flow is here.
@@ -174,9 +174,9 @@ registerIssuer    : (principal) -> (variant { ok: text; err: text });           
 - Order lifecycle for the UI: `OrderStatus` `Open → PartiallyFilled → Filled | Cancelled`; remainder re-rests at preserved price-time priority in the next window (poll `getOrder(id)`).
 - Trade lifecycle: `TradeStatus` `Open → Funded → Settled | Aborted`. A pending obligation shows `settled=false, dvpTradeId=null|opt T`.
 - Clearing math: uniform clearing price p* per window (`ClearResult.clearingPrice`); the long side is rationed by **price-time priority** (the proven allocation; a pro-rata variant is an operator-gated option — see the pro-rata proposal in `session-checkpoint-dvp-phase4.md`).
-- Chunking: a large clear may take K chunks (`ClearResult.chunks`, `pendingClearStatus`); the UI shows "clearing…" until `complete=true`. `maxFillsPerChunk = 4000` (≈4.8× headroom under the 20 B fuel ceiling — mission C).
+- Chunking: a large clear may take K chunks (`ClearResult.chunks`, `pendingClearStatus`); the UI shows "clearing…" until `complete=true`. `maxFillsPerChunk = 4000` (≈4.8× headroom under the per-message fuel ceiling).
 
 ## 6. Hard boundaries (do NOT build these into the UI)
 - The UI never calls `coreD.settleMatchFor` directly — it is gated to the matching engine. Settlement is triggered via the engine (`settleObligation`/`settleMatched`) or runs autonomously.
 - The UI never needs the relayer/admin keys; trading is done as the logged-in user. Clearing + settlement are operator/relayer actions (or autonomous), surfaced to the UI as state changes to poll.
-- Throwaway only. No prod ids appear here.
+- No production identifiers appear in this document.

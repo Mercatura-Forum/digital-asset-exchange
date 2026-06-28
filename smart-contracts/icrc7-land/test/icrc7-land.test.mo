@@ -1,4 +1,4 @@
-/// run_tests_icrc7.mo — interpreter battery for the NFT (`#icrc7`) leg predicates (mission §3C).
+/// icrc7-land.test.mo — interpreter battery for the NFT (`#icrc7`) leg predicates.
 ///
 /// Run with the moc interpreter (no replica):
 ///   moc -r --package core <core/src> --package sha2 <sha2/src> test/run_tests_icrc7.mo
@@ -24,9 +24,9 @@ import Nat64 "mo:core/Nat64";
 import Text "mo:core/Text";
 import Principal "mo:core/Principal";
 
-import L "../src/DvpLogic";
-import R "../src/land/LandRegistry";
-import I "../src/ICRC7";
+import L "../../dvp-core/src/DvpLogic";
+import R "../src/LandRegistry";
+import I "../../dvp-core/src/ICRC7";
 
 // ── harness ────────────────────────────────────────────────────────────────────────────
 var checks : Nat = 0;
@@ -43,7 +43,7 @@ func checkEqNat(name : Text, got : Nat, want : Nat) {
 let MAKER = Principal.fromText("wo5zf-huqv6-cec7e-uo4bu-fx2js-kalhq-aryrs-23gzj-4zq6w-wl2y4-oae");
 let TAKER = Principal.fromText("winj5-duvhk-a76p2-7aiiy-372y4-xinlt-ettsr-ykxhl-oi7or-kpvnh-eae");
 // A valid, distinct principal standing in for the DvP core (the registry only checks
-// equality; the on-chain core's real principal is used in the L1–L6 throwaway battery).
+// equality; the on-chain core's real principal is used in the live battery).
 let CORE = Principal.fromText("7dqsm-7qaaa-aaaaa-ad5fa-cai");
 func acct(p : Principal) : I.Account { { owner = p; subaccount = null } };
 func ownerIs(st : R.State, tid : Nat, p : Principal) : Bool {

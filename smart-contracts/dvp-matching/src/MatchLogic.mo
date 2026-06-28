@@ -2,8 +2,8 @@
 ///
 /// Referentially transparent (no awaits, no state, no I/O): exhaustively testable under
 /// `mops test --mode interpreter` with no replica. The actor (Matching.mo) and the battery both
-/// call these, so the tests exercise production code. This is where the M1 (chunked == unbounded),
-/// M2 (Kill-before-mutate), M3 (priority), M4 (conservation) guarantees are proven at the logic level.
+/// call these, so the tests exercise production code. This is where the chunked-equals-unbounded,
+/// kill-before-mutate, price-time-priority, and conservation guarantees are proven at the logic level.
 ///
 /// Microstructure: frequent batch auction, single uniform clearing price p* per window
 /// (Budish–Cramton–Shim). p* maximises executable volume; ties broken to minimum imbalance, then
@@ -109,7 +109,7 @@ module {
     Array.map<BookOrder, T.EligibleOrder>(s, func a = { id = a.id; qty = a.qty })
   };
 
-  // ── Resumable fill planner (the M1 crux) ─────────────────────────────────────────────────
+  // ── Resumable fill planner (the chunked-equals-unbounded crux) ──────────────────────────────
   // One greedy micro-fill: fill min(boundary bid remaining, boundary ask remaining, V−filled)
   // between eligBids[i] and eligAsks[j], all at p*. PURE: returns the next cursor + an optional
   // fill. carryBid/carryAsk == 0 means "(re)load from the order's qty" (a fresh boundary order).
@@ -145,9 +145,9 @@ module {
     { fill = ?fill; i = i1; j = j1; carryBid = carryB; carryAsk = carryA; filled = filled0 + f }
   };
 
-  // Unbounded reference: the full fill schedule (used as the M1 ground truth and by the actor's
+  // Unbounded reference: the full fill schedule (used as the equivalence ground truth and by the actor's
   // own off-chain reference; the actor itself NEVER materialises this — it streams step() under a
-  // perf-counter budget so a pathologically deep book never blows one message, M5).
+  // perf-counter budget so a pathologically deep book never blows one message).
   public func fillSchedule(
     eligBids : [T.EligibleOrder],
     eligAsks : [T.EligibleOrder],
@@ -166,13 +166,13 @@ module {
     List.toArray(out)
   };
 
-  // ── All-or-none (FOK) resolution — Kill-before-mutate (mission M2) ──────────────────────────
+  // ── All-or-none (FOK) resolution — kill-before-mutate ───────────────────────────────────────
   // An AON order must fill its FULL qty at p* this window or be KILLED. Standard call-auction
   // fixpoint: clear; if any AON order is under-filled, remove the LOWEST-priority such order and
   // re-clear; repeat until stable. PURE & read-only — it computes the KILL set WITHOUT mutating any
   // book (the actor mutates only afterwards), which IS Oisy's Kill-before-mutate. Returns the final
   // p* over survivors and the killed id set. Skips schedule materialisation entirely when there are
-  // no AON orders (the deep-crossing M5 path stays O(book), never O(fills)).
+  // no AON orders (the deep-crossing path stays O(book), never O(fills)).
   public type BookOrderA = { id : Nat; limitPrice : Nat; qty : Nat; aon : Bool; isBid : Bool };
 
   func anyAon(os : [BookOrderA]) : Bool { for (o in os.vals()) { if (o.aon) return true }; false };
@@ -195,7 +195,7 @@ module {
   };
 
   public func clearAON(ordersIn : [BookOrderA]) : { pStar : ?Nat; killed : [Nat] } {
-    // fast path: no AON orders → single clearingPrice, no schedule materialised (M5-safe)
+    // fast path: no AON orders → single clearingPrice, no schedule materialised
     if (not anyAon(ordersIn)) {
       let bids = Array.filter<BookOrderA>(ordersIn, func o = o.isBid);
       let asks = Array.filter<BookOrderA>(ordersIn, func o = not o.isBid);
@@ -235,7 +235,7 @@ module {
     };
   };
 
-  // ── Conservation predicate (M4) ────────────────────────────────────────────────────────────
+  // ── Conservation predicate ───────────────────────────────────────────────────────────────────
   // Across a fill schedule at uniform price p*: total shares moved == Σ qty == V, and total cash
   // moved == V·p*. Per buyer/seller the share and cash legs net exactly (q shares ⇄ q·p* cash).
   public func scheduleConserves(schedule : [T.Fill], pStar : Nat, targetV : Nat) : Bool {

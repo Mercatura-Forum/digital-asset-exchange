@@ -1,16 +1,16 @@
-/// Matching.mo — frequent batch-auction CLOB matching engine (DvP P3).
+/// Matching.mo — frequent batch-auction CLOB matching engine.
 ///
 /// A NEW persistent actor that ORCHESTRATES three PROVEN, UNCHANGED primitives — it re-implements
 /// neither escrow nor settlement:
 ///   • shares ledger (ICRC-1/2 IndexedLedger)   • cash ledger (ICRC-1/2 IndexedLedger CBDC)
-///   • the DvP atomic-swap core (settlement, both-or-neither — byte-frozen lifecycle, mission rule 6)
+///   • the DvP atomic-swap core (settlement, both-or-neither — unchanged lifecycle)
 ///
 /// Model (decided): frequent batch auction, single uniform clearing price p* per window
 /// (Budish–Cramton–Shim). Escrow-on-submit = ICRC-2 approve-to-core + an engine-side RESERVATION
 /// (no engine custody). Each cleared (buyer,seller,p*,qty) → a SETTLEMENT OBLIGATION that settles as
 /// a DvP trade between seller=maker and buyer=taker through the UNCHANGED core.
 ///
-/// The crux (mission C): the clear is `Prim.performanceCounter(0)`-gated against MATCH_INSTR_BUDGET
+/// The crux: the clear is `Prim.performanceCounter(0)`-gated against MATCH_INSTR_BUDGET
 /// (mirror CLMM SWAP_INSTR_BUDGET); on budget exhaustion mid-clear it applies the bounded fill slice
 /// atomically, saves a PendingClear, and a Timer resumes next round — plan-then-apply via the PURE,
 /// read-only MatchLogic planner (Oisy plan-then-apply / Kill-before-mutate), with the partial
@@ -40,7 +40,7 @@ shared (install) persistent actor class Matching(cfg : {
   dvpCore : Principal;
   instrBudget : ?Nat64;        // IC-side per-chunk instruction budget; null => 20 B
   maxFillsPerChunk : ?Nat;     // egypt-side per-chunk fill cap; null => production default (1000)
-  listingRegistry : ?Principal; // P4-D: issuer-listing gate. null => no gate (M1-M5 reference behaviour).
+  listingRegistry : ?Principal; // issuer-listing gate. null => no gate (reference behaviour).
 }) = self {
 
   ignore install;
@@ -49,10 +49,10 @@ shared (install) persistent actor class Matching(cfg : {
   let sharesLedger : Principal = cfg.sharesLedger;
   let cashLedger : Principal = cfg.cashLedger;
   let dvpCore : Principal = cfg.dvpCore;
-  let listingRegistry : ?Principal = cfg.listingRegistry;  // P4-D issuer-listing gate (optional)
+  let listingRegistry : ?Principal = cfg.listingRegistry;  // issuer-listing gate (optional)
 
-  // ── Interfaces the engine calls (P4) ────────────────────────────────────────────────────────
-  // The DvP core's additive authorized-relayer settlement entrypoint (mission B). The engine is the
+  // ── Interfaces the engine calls ───────────────────────────────────────────────────────────────
+  // The DvP core's authorized-relayer settlement entrypoint. The engine is the
   // controller-set relayer; settleMatchFor pays the asset leg → buyer and the cash leg → seller
   // DIRECTLY from the core's both-or-neither atomic swap, with NO trader action at settle.
   type TradeStatus = { #Open; #Funded; #Settled; #Aborted };
@@ -69,7 +69,7 @@ shared (install) persistent actor class Matching(cfg : {
   };
   func dvpCoreActor() : DvpCoreIface { actor (Principal.toText(dvpCore)) };
 
-  // The issuer-listing registry (mission D). Only a registered+funded (shares,cash) pair is
+  // The issuer-listing registry. Only a registered+funded (shares,cash) pair is
   // tradeable; a query the engine consults at order intake when a registry is configured.
   type ListingRegistryIface = actor {
     isPairTradeable : (shares : Principal, cash : Principal) -> async Bool;
@@ -82,7 +82,7 @@ shared (install) persistent actor class Matching(cfg : {
   //    the EGYPT engine, whose `ic0.performance_counter` returns the block timestamp_ns (constant
   //    within a message — host.rs:2652), so the instruction-budget term never fires here. Bounding
   //    by fill count keeps each chunk's work well under the engine instruction limit regardless of
-  //    crossing depth (mission M5: no dependence on an operator size cap — the engine self-bounds).
+  //    crossing depth (no dependence on an operator size cap — the engine self-bounds).
   // Both are configurable so a test instance can force chunking with a feasible order count; the
   // chunking/resume logic is byte-identical for ALL chunk sizes (proven by the pure battery).
   let MATCH_INSTR_BUDGET : Nat64 = switch (cfg.instrBudget) { case (?b) b; case null 20_000_000_000 };
@@ -101,7 +101,7 @@ shared (install) persistent actor class Matching(cfg : {
   let reservedShares = Map.empty<Principal, Nat>();       // by seller owner
   let reservedCash = Map.empty<Principal, Nat>();         // by buyer owner
 
-  // diagnostic invariant log (M4 no-stranding ANOMALIES; asserted EMPTY in tests; never traps)
+  // diagnostic invariant log (no-stranding ANOMALIES; asserted EMPTY in tests; never traps)
   let invLog = List.empty<Text>();
   // normal-event audit log for FOK kills (a kill is expected behaviour, NOT an anomaly)
   let killLog = List.empty<Text>();
@@ -126,7 +126,7 @@ shared (install) persistent actor class Matching(cfg : {
   func memNat(xs : [Nat], v : Nat) : Bool { for (x in xs.vals()) { if (x == v) return true }; false };
 
   // Kill an all-or-none (FOK) order that could not fully fill: release its reservation, mark it
-  // Cancelled, zero its remaining. NO fill is ever applied (Kill-before-mutate, M2). Other orders
+  // Cancelled, zero its remaining. NO fill is ever applied (kill-before-mutate). Other orders
   // are untouched (the kill decision came from the read-only clearAON fixpoint).
   func killOrder(id : Nat) {
     switch (Map.get(orders, Nat.compare, id)) {
@@ -151,8 +151,8 @@ shared (install) persistent actor class Matching(cfg : {
     if (args.qty == 0) return #err("qty must be > 0");
     if (args.limitPrice == 0) return #err("limitPrice must be > 0");
 
-    // P4-D listing gate: when a registry is configured, this engine's (shares,cash) pair must be a
-    // registered+funded listing or no order is accepted. null registry => no gate (M1-M5 behaviour).
+    // listing gate: when a registry is configured, this engine's (shares,cash) pair must be a
+    // registered+funded listing or no order is accepted. null registry => no gate (reference behaviour).
     switch (listingRegistry) {
       case (?reg) {
         let registry : ListingRegistryIface = actor (Principal.toText(reg));
@@ -232,10 +232,10 @@ shared (install) persistent actor class Matching(cfg : {
     };
     let allA = List.toArray(allL);
 
-    // close window w — new submits now land in w+1 (orders arriving during the chunking gap, M3)
+    // close window w — new submits now land in w+1 (orders arriving during the chunking gap)
     currentWindow += 1;
 
-    // Kill-before-mutate (M2): the read-only AON fixpoint computes p* over SURVIVORS + the KILL set
+    // Kill-before-mutate: the read-only AON fixpoint computes p* over SURVIVORS + the KILL set
     // WITHOUT touching any book. We then kill the rejected FOK orders (release reservation, status
     // Cancelled) — no fills are ever applied for a FOK that cannot fully fill.
     let aon = L.clearAON(allA);
@@ -331,7 +331,7 @@ shared (install) persistent actor class Matching(cfg : {
   };
 
   // Finalize a completed clear: re-enqueue every not-fully-filled order of window w into the now-open
-  // window, PRESERVING its original id (price-time priority) — M3.
+  // window, PRESERVING its original id (price-time priority).
   func finalizeClear(pc : T.PendingClear) {
     reenqueue(pc.window);
     ignore Map.delete(pendingClears, Nat.compare, pc.window);
@@ -368,7 +368,7 @@ shared (install) persistent actor class Matching(cfg : {
     if (found) #ok("obligation " # Nat.toText(seq) # " linked to DvP trade " # Nat.toText(dvpTradeId)) else #err("no such obligation");
   };
 
-  // ── B (P4): autonomous atomic settlement — drive a cleared obligation through the core's additive
+  // ── Autonomous atomic settlement — drive a cleared obligation through the core's
   // authorized-relayer entrypoint. The engine (as the controller-set relayer) calls settleMatchFor;
   // the core escrows shares from the seller + cash from the buyer (both pre-approved the core at
   // intake) and pays shares→buyer + cash→seller, both-or-neither, in one block, NO trader action.
@@ -477,12 +477,12 @@ shared (install) persistent actor class Matching(cfg : {
     };
   };
   public query func reservationOf(p : Principal) : async { shares : Nat; cash : Nat } { { shares = getN(reservedShares, p); cash = getN(reservedCash, p) } };
-  // chunk-messages used to clear window w (persists after finalize) — proof of K>=2 chunking (M5).
+  // chunk-messages used to clear window w (persists after finalize) — proof of K>=2 chunking.
   public query func chunksUsed(w : Nat) : async Nat { cidN(chunkCounts, w) };
   public query func invariantLog() : async [Text] { List.toArray(invLog) };
   public query func killLogView() : async [Text] { List.toArray(killLog) };
 
-  // Deterministic text summaries for byte-identical cross-run comparison (mission M1).
+  // Deterministic text summaries for byte-identical cross-run comparison.
   // Obligation schedule in emission order: "buyId>sellId@price:qty;...".
   public query func obligationSummary() : async Text {
     var s = "";
