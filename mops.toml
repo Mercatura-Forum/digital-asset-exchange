@@ -1,0 +1,9 @@
+[package]
+name = "digital-asset-exchange"
+version = "0.1.0"
+description = "Sovereign digital-asset exchange — atomic DvP settlement core (BIS Model 1), frequent batch-auction CLOB, ICRC-MENA self-indexed ledger, and ICRC-7/37 land-title registry."
+repository = "https://github.com/Mercatura-Forum/digital-asset-exchange"
+keywords = ["dvp", "exchange", "icrc", "icrc-mena", "settlement", "defi", "motoko", "icp"]
+
+[dependencies]
+core = "2.3.1"

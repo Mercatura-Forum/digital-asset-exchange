@@ -1,0 +1,34 @@
+# dvp-core deploy manifest — EXAMPLE. Copy to `thebes.toml` and fill in your cluster.
+# Build the wasms first (thebes-deploy build), then deploy. Replace the validator
+# endpoints and identity with your own; cids are assigned per environment.
+[project]
+name = "dvp-core"
+default_network = "local"
+chain_id = 0
+
+[networks.local]
+validators = [
+    "http://127.0.0.1:18080",
+]
+routing = "smart"
+
+# Self-indexed ICRC-MENA ledger instance used as the cash leg (CBDC).
+[canisters.cash]
+type = "backend-motoko"
+wasm = "build/IndexedLedger.wasm"
+init = '(record { decimals = 2 : nat8; fee = 10 : nat; name = "DvP CBDC EGP"; symbol = "CEGP"; max_memo_length = null; max_supply = null; minting_account = record { owner = principal "2vxsx-fae"; subaccount = null }; initial_balances = vec {} })'
+identity = "your-deployer"
+
+# The atomic DvP settlement core.
+[canisters.dvp]
+type = "backend-motoko"
+wasm = "build/DvpCore.wasm"
+init = "()"
+identity = "your-deployer"
+
+# ICRC-7/37 land-title ledger.
+[canisters.land]
+type = "backend-motoko"
+wasm = "build/LandLedger.wasm"
+init = '(record { name = "Land Titles"; symbol = "LAND"; description = opt "ICRC-7/37 land-title registry" })'
+identity = "your-deployer"
